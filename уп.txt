@@ -1,0 +1,546 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+
+class Program
+{
+    static Dictionary<string, string> users = new Dictionary<string, string>();
+    static Dictionary<string, List<string>> userInventory = new Dictionary<string, List<string>>();
+    static Dictionary<string, int> userLevel = new Dictionary<string, int>();
+    static Dictionary<string, int> userSales = new Dictionary<string, int>();
+    static Dictionary<string, double> userBalance = new Dictionary<string, double>();
+    static string currentUser = "";
+
+    static bool UserExists(string username)
+    {
+        return users.ContainsKey(username);
+    }
+
+    static void Main()
+    {
+        bool isRunning = true;
+
+        while (isRunning)
+        {
+            Console.WriteLine("Меню авторизации:\n1. Войти в систему\n2. Зарегистрироваться\n3. Выйти");
+            string choice = Console.ReadLine();
+
+            switch (choice)
+            {
+                case "1":
+                    Login();
+                    break;
+                case "2":
+                    Register();
+                    break;
+                case "3":
+                    isRunning = false;
+                    break;
+                default:
+                    Console.WriteLine("Некорректный выбор");
+                    break;
+            }
+        }
+    }
+
+    static void Register()
+    {
+        Console.WriteLine("Введите логин пользователя:");
+        string username = Console.ReadLine();
+
+        if (users.ContainsKey(username))
+        {
+            Console.WriteLine("Пользователь с таким логином уже существует.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            Console.WriteLine("Ошибка: Логин не может быть пустым.");
+            return;
+        }
+
+        Console.WriteLine("Введите пароль:");
+        string password = Console.ReadLine();
+
+        if (users.ContainsValue(password))
+        {
+            Console.WriteLine("Пользователь с таким паролем уже существует.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            Console.WriteLine("Ошибка: Пароль не может быть пустым.");
+            return;
+        }
+
+
+        users.Add(username, password);
+        userInventory.Add(username, new List<string>());
+        userLevel.Add(username, 0);
+        userSales.Add(username, 0);
+        userBalance.Add(username, 0.0);
+        Console.WriteLine("Регистрация прошла успешно.");
+    }
+
+    static void Login()
+    {
+        Console.WriteLine("Введите логин пользователя. Для возвращения в предыдущее меню введите 0. ");
+        string username = Console.ReadLine();
+
+        if (!users.ContainsKey(username))
+        {
+            Console.WriteLine("Неправильный логин, попробуйте снова.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            Console.WriteLine("Ошибка: Логин не может быть пустым.");
+            return;
+        }
+
+        if (username == "0")
+        {
+            return;
+        }
+
+        Console.WriteLine("Введите пароль:");
+        string password = Console.ReadLine();
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            Console.WriteLine("Ошибка: Пароль не может быть пустым.");
+            return;
+        }
+
+        if (users[username] == password)
+        {
+            Console.WriteLine("Вход выполнен успешно.");
+            currentUser = username;
+        }
+        else
+        {
+            Console.WriteLine("Неправильный логин или пароль");
+            return;
+        }
+        MainMenu();
+    }
+
+    static void MainMenu()
+    {
+        bool isMainMenu = true;
+
+        while (isMainMenu)
+        {
+            Console.WriteLine("\nВыберите желаемое действие:\n1. Вывод профиля\n2. Просмотр торговой площадки\n3. Выход");
+            string choice = Console.ReadLine();
+
+            switch (choice)
+            {
+                case "1":
+                    DisplayProfile(currentUser);
+                    break;
+                case "2":
+                    TradeArea();
+                    break;
+                case "3":
+                    isMainMenu = false;
+                    break;
+                default:
+                    Console.WriteLine("Некорректный выбор.");
+                    break;
+            }
+        }
+    }
+
+    static void DisplayProfile(string username)
+    {
+        if (users.ContainsKey(username))
+        {
+            Console.WriteLine("Никнейм: " + username);
+            Console.WriteLine("Уровень профиля: " + userLevel[username]);
+            Console.WriteLine("Кол-во продаж: " + userSales[username]);
+            Console.WriteLine("Баланс: " + userBalance[username]);
+            Console.WriteLine("Инвентарь:");
+            int itemNumber = 0;
+            foreach (var item in userInventory[username])
+            {
+                Console.WriteLine("|————————————————————————-|");
+                Console.WriteLine($"Номер: #{itemNumber}");
+                Console.WriteLine(item);
+                Console.WriteLine("|————————————————————————-|");
+                itemNumber++;
+            }
+        }
+        ProfileMenu();
+    }
+
+    static void ProfileMenu()
+    {
+        bool inDisplayProfile = true;
+        string username = currentUser;
+
+        Console.WriteLine("\nВыберите желаемое действие:\n1. Пополнить баланс\n2. Сменить никнейм\n3. Добавить новый предмет на продажу\n4. Изменить стоимость предмета\n5. Выход");
+        string choice = Console.ReadLine();
+
+        switch (choice)
+        {
+            case "1":
+                Balance(username);
+                break;
+            case "2":
+                NewNickname(username);
+                break;
+            case "3":
+                AddNewItem(username);
+                break;
+            case "4":
+                NewPrice(username);
+                break;
+            case "5":
+                inDisplayProfile = false;
+                break;
+            default:
+                Console.WriteLine("Некорректный выбор.");
+                break;
+        }
+    }
+
+    static void Balance(string username)
+    {
+        Console.WriteLine("Введите сумму для пополнения:");
+        double amount;
+        if (!double.TryParse(Console.ReadLine(), out amount) || amount < 0)
+        {
+            Console.WriteLine("Некорректная сумма для пополнения.");
+            return;
+        }
+
+        userBalance[username] += amount;
+        DisplayProfile(username);
+    }
+
+    static void NewNickname(string username)
+    {
+        Console.WriteLine("Введите новый никнейм:");
+        string newNickname = Console.ReadLine();
+
+        if (string.IsNullOrWhiteSpace(newNickname))
+        {
+            Console.WriteLine("Ошибка: Никнейм не может быть пустым.");
+            return;
+        }
+
+        if (users.ContainsValue(newNickname))
+        {
+            Console.WriteLine("Никнейм уже занят. Попробуйте другой.");
+        }
+        else
+        {
+            users.Add(newNickname, users[username]);
+            users.Remove(username);
+            userInventory.Add(newNickname, userInventory[username]);
+            userLevel.Add(newNickname, userLevel[username]);
+            userSales.Add(newNickname, userSales[username]);
+            userBalance.Add(newNickname, userBalance[username]);
+            currentUser = newNickname;
+            Console.WriteLine("Никнейм успешно изменён.");
+            DisplayProfile(username);
+        
+        }
+    }
+
+    static void AddNewItem(string username)
+    {
+        Console.WriteLine("Введите название предмета:");
+        string itemName = Console.ReadLine();
+
+        Console.WriteLine("Выберите тип предмета: \n1. Одежда\n2. Курьеры\n3. Варды\n4. Ключи\n5. Экраны\n6. Руны\n7. Интерфейсы\n8. Игроки\n9. Комментаторы");
+        int typeChoice;
+        while (!int.TryParse(Console.ReadLine(), out typeChoice) || typeChoice < 1 || typeChoice > 9)
+        {
+            Console.WriteLine("Пожалуйста, выберите корректный тип предмета.");
+            return;
+        }
+
+        Console.WriteLine("Введите описание предмета:");
+        string itemDescription = Console.ReadLine();
+
+        Console.WriteLine("Введите стоимость предмета:");
+        double itemPrice;
+        while (!double.TryParse(Console.ReadLine(), out itemPrice) || itemPrice <= 0)
+        {
+            Console.WriteLine("Пожалуйста, введите корректную положительную стоимость.");
+            return;
+        }
+
+        string itemTypeName = "";
+        switch (typeChoice)
+        {
+            case 1:
+                itemTypeName = "Одежда";
+                break;
+            case 2:
+                itemTypeName = "Курьеры";
+                break;
+            case 3:
+                itemTypeName = "Варды";
+                break;
+            case 4:
+                itemTypeName = "Ключи";
+                break;
+            case 5:
+                itemTypeName = "Экраны";
+                break;
+            case 6:
+                itemTypeName = "Руны";
+                break;
+            case 7:
+                itemTypeName = "Интерфейсы";
+                break;
+            case 8:
+                itemTypeName = "Игроки";
+                break;
+            case 9:
+                itemTypeName = "Комментаторы";
+                break;
+            default:
+                itemTypeName = "Неизвестный тип";
+                break;
+        }
+
+        string newItem = $"Наименование: {itemName}\nВид вещи: {itemTypeName}\nОписание: {itemDescription}\nСтоимость: {itemPrice} руб.";
+
+        userInventory[username].Add(newItem);
+        userSales[username]++;
+
+        if (userSales[username] == 1)
+        {
+            userLevel[username]++;
+        }
+        DisplayProfile(username);
+    }
+    static void NewPrice(string username)
+    {
+        Console.WriteLine("Введите номер предмета в инвентаре:");
+        int itemNumber = int.Parse(Console.ReadLine());
+
+        if (itemNumber < 0 || itemNumber >= userInventory[username].Count)
+        {
+            Console.WriteLine("Такого товара нет в инвентаре.");
+            return;
+        }
+
+        Console.Write("Введите новую стоимость предмета: ");
+        double newPrice;
+        while (!double.TryParse(Console.ReadLine(), out newPrice) || newPrice <= 0)
+        {
+            Console.WriteLine("Пожалуйста, введите корректную положительную стоимость.");
+            return;
+        }
+
+        string currentItem = userInventory[username][itemNumber];
+        string[] itemInfo = currentItem.Split('\n');
+        itemInfo[itemInfo.Length - 1] = $"Стоимость: {newPrice}";
+        userInventory[username][itemNumber] = string.Join("\n", itemInfo);
+        DisplayProfile(username);
+    }
+    static void TradeArea()
+    {
+        Dictionary<string, int> itemsInCategories = CountItemsInMarketplaceByCategory();
+
+        Console.WriteLine("Просмотр категорий товаров:");
+        List<string> categories = GetCategories();
+
+        foreach (var category in categories)
+        {
+            int itemCount = itemsInCategories.ContainsKey(category) ? itemsInCategories[category] : 0;
+            Console.WriteLine($"{categories.IndexOf(category) + 1}. {category,-15} Кол-во в продаже: {itemCount} шт.");
+        }
+
+        Console.WriteLine("Выберите категорию для вывода предметов:");
+        string chosenCategory = Console.ReadLine();
+
+        if (int.TryParse(chosenCategory, out int categoryIndex) && categoryIndex >= 1 && categoryIndex <= categories.Count)
+        {
+            if (itemsInCategories.ContainsKey(categories[categoryIndex - 1]) && itemsInCategories[categories[categoryIndex - 1]] > 0)
+            {
+                DisplayItemsInCategory(chosenCategory);
+            }
+            else
+            {
+                Console.WriteLine("Некорректный ввод, попробуйте снова.");
+                MainMenu();
+            }
+        }
+        else
+        {
+            Console.WriteLine("Категория не найдена.");
+            return;
+        }
+
+
+        static List<string> GetCategories()
+        {
+            return new List<string> { "Одежда", "Курьеры", "Варды", "Ключи", "Экраны", "Руны", "Интерфейсы", "Игроки", "Комментаторы" };
+        }
+
+        static Dictionary<string, int> CountItemsInMarketplaceByCategory()
+        {
+            Dictionary<string, int> itemsInCategories = new Dictionary<string, int>();
+
+            foreach (var userItems in userInventory.Values)
+            {
+                foreach (var item in userItems)
+                {
+                    string category = item.Split('\n')[1].Split(':')[1].Trim();
+                    if (itemsInCategories.ContainsKey(category))
+                    {
+                        itemsInCategories[category]++;
+                    }
+                    else
+                    {
+                        itemsInCategories.Add(category, 1);
+                    }
+                }
+            }
+
+            return itemsInCategories;
+        }
+
+        static void DisplayMarketItems()
+        {
+            Dictionary<string, int> itemsInCategories = new Dictionary<string, int>
+            {
+             {"Одежда", 0},
+             {"Курьеры", 0},
+             {"Варды", 0},
+             {"Ключи", 0},
+             {"Экраны", 0},
+             {"Руны", 0},
+             {"Интерфейсы", 0},
+             {"Игроки", 0},
+             {"Комментаторы", 0}
+            };
+
+            foreach (var user in userInventory)
+            {
+                foreach (var item in user.Value)
+                {
+                    string[] itemDetails = item.Split('\n');
+                    string category = itemDetails[0].Split(':')[1].Trim();
+                    if (itemsInCategories.ContainsKey(category))
+                    {
+                        itemsInCategories[category]++;
+                    }
+                }
+            }
+
+            Console.WriteLine("Просмотр категорий товаров:");
+            int categoryNumber = 1;
+            foreach (var category in itemsInCategories)
+            {
+                Console.WriteLine($"{categoryNumber}. {category.Key,-15} Кол-во в продаже: {category.Value}");
+                categoryNumber++;
+            }
+        }
+
+        static void DisplayItemsInCategory(string chosenCategory)
+        {
+
+
+            int itemNumber = 0;
+
+            foreach (var username in users.Keys)
+            {
+                foreach (var item in userInventory[username])
+                {
+                    string category = item.Split('\n')[1].Split(':')[1].Trim();
+                    if (category == GetCategories()[int.Parse(chosenCategory) - 1])
+                    {
+                        Console.WriteLine("|————————————————————————-|");
+                        Console.WriteLine($"Номер: #{itemNumber}");
+                        Console.WriteLine(item);
+                        itemNumber++;
+                        Console.WriteLine("|————————————————————————-|");
+                    }
+                }
+                Console.WriteLine("Владелец: " + username);
+            }
+
+            Console.WriteLine("\nВыберите желаемое действие:\n1. Купить предмет\n2. Вернуться к категориям\n3. Выход");
+            string choice = Console.ReadLine();
+
+            switch (choice)
+            {
+                case "1":
+                    BuyItem();
+                    break;
+                case "2":
+                    TradeArea();
+                    break;
+                case "3":
+                    break;
+                default:
+                    Console.WriteLine("Некорректный выбор.");
+                    break;
+            }
+        }
+        static void BuyItem()
+        {
+            Console.WriteLine("Введите никнейм владельца предмета:");
+            string sellerUsername = Console.ReadLine();
+
+            if (sellerUsername == currentUser)
+            {
+                Console.WriteLine("Нельзя купить свой собственный предмет");
+                TradeArea();
+                return;
+            }
+
+            Console.WriteLine("Введите номер предмета в инвентаре владельца: ");
+            int itemNumber = int.Parse(Console.ReadLine());
+
+            if (UserExists(sellerUsername) && userInventory.ContainsKey(sellerUsername) && itemNumber >= 0 && itemNumber < userInventory[sellerUsername].Count)
+            {
+                string item = userInventory[sellerUsername][itemNumber];
+
+                string[] itemInfo = item.Split('\n');
+                string itemPriceStr = itemInfo[itemInfo.Length - 1].Split(':')[1].Trim();
+                double itemPrice = double.Parse(itemPriceStr.Replace(" руб.", ""));
+
+                if (userBalance[currentUser] >= itemPrice)
+                {
+                    userInventory[sellerUsername].RemoveAt(itemNumber);
+                    userBalance[currentUser] -= itemPrice;
+                    userBalance[sellerUsername] += itemPrice;
+                    userInventory[currentUser].Add(item);
+
+                    Console.WriteLine("Предмет успешно куплен.");
+                }
+                else
+                {
+                    Console.WriteLine("Недостаточно средств.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Пользователь или предмет не найдены, либо недостаточно предметов для покупки.");
+            }
+
+            userSales[sellerUsername]++;
+            userSales[currentUser]++;
+
+            if (userSales[sellerUsername] % 5 == 0 || userSales[sellerUsername] == 1)
+            {
+                userLevel[sellerUsername]++;
+            }
+            if (userSales[currentUser] % 5 == 0 || userSales[currentUser] == 1)
+            {
+                userLevel[currentUser]++;
+            }
+        }
+    }
+}
